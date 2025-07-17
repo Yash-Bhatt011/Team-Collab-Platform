@@ -1,0 +1,10 @@
+/* Override Chakra UI modal backdrop blur to remove blur effect */
+.chakra-modal__overlay {
+  backdrop-filter: none !important;
+}
+
+body {
+  padding-top: 64px; /* Adjust this value to match navbar height */
+  position: relative;
+  z-index: 0;
+}

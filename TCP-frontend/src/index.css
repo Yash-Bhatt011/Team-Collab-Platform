@@ -1,0 +1,41 @@
+/* Global styles for notification z-index fix */
+.chakra-menu__menu-list {
+  z-index: 10000 !important;
+}
+
+/* Ensure notification menu appears above tabs and other elements */
+[data-testid="notification-menu"] .chakra-menu__menu-list {
+  z-index: 10000 !important;
+  position: relative;
+}
+
+/* Fix for main content to account for fixed navbar */
+.main-content {
+  padding-top: 80px;
+}
+
+/* Ensure modals don't interfere with notifications */
+.chakra-modal__overlay {
+  z-index: 9999 !important;
+}
+
+.chakra-modal__content {
+  z-index: 9999 !important;
+}
+
+/* Tabs should have lower z-index than notifications */
+.chakra-tabs__tablist {
+  z-index: 1 !important;
+}
+
+.chakra-tabs__tab-panel {
+  z-index: 1 !important;
+}
+
+/* Ensure navbar is properly positioned */
+.navbar-fixed {
+  position: fixed !important;
+  top: 0 !important;
+  width: 100% !important;
+  z-index: 1000 !important;
+}
