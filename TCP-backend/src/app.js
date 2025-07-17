@@ -16,7 +16,7 @@ const errorHandler = require('./middleware/errorHandler');
 const userDebugRoutes = require('./routes/userDebugRoutes');
 const dashboardRoutes = require('./routes/dashboard');
 const chatRoutes = require('./routes/chat');
-const Chat = require('./models/chat');
+const Chat = require('./models/Chat');
 
 const app = express();
 const httpServer = createServer(app);
