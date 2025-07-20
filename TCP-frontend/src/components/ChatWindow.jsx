@@ -6,7 +6,7 @@ import { ArrowBackIcon, CloseIcon, AddIcon, ChatIcon, AttachmentIcon } from '@ch
 import { BsEmojiSmile } from 'react-icons/bs';
 import UserSearch from './UserSearch';
 import { searchUsers } from '../services/api/userApi';
-import { createChat, getUserChats, getChatMessages, sendMessage } from '../services/api/chatApi';
+import { searchChatUsers, createChat, getUserChats, getChatMessages, sendMessage } from '../services/api/chatApi';
 import { useAuth } from '../contexts/AuthContext';
 import io from 'socket.io-client';
 
@@ -130,6 +130,54 @@ const ChatWindow = ({ onDrawerClose }) => {
       }
     } catch (err) {
       setError('Failed to send message');
+    }
+  };
+
+  const handleUserSearch = async (query) => {
+    try {
+      const res = await searchChatUsers(query);
+      if (res.success) {
+        setSearchResults(res.data);
+      } else {
+        setSearchResults([]);
+        setError(res.message || 'Failed to search users');
+      }
+    } catch (err) {
+      setSearchResults([]);
+      setError('Failed to search users');
+    }
+  };
+
+  // Call handleUserSearch on search input change or on mount for empty query
+  useEffect(() => {
+    handleUserSearch(searchQuery);
+  }, [searchQuery]);
+
+  // Group creation logic
+  const handleCreateGroup = async () => {
+    if (!groupName.trim() || selectedUsers.length === 0) {
+      setError('Group name and at least one user are required');
+      return;
+    }
+    try {
+      const chatData = {
+        name: groupName,
+        type: 'group',
+        participants: selectedUsers.map(u => u._id),
+      };
+      const res = await createChat(chatData);
+      if (res.success && res.data) {
+        setChats(prev => [res.data, ...prev]);
+        setSelectedChat(res.data._id);
+        setGroupName('');
+        setSelectedUsers([]);
+        setShowSidebar(false);
+        setError(null);
+      } else {
+        setError(res.message || 'Failed to create group');
+      }
+    } catch (err) {
+      setError('Failed to create group');
     }
   };
 

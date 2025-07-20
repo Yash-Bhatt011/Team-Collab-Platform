@@ -115,28 +115,28 @@ exports.createUser = async (req, res) => {
 exports.searchUsers = async (req, res) => {
   try {
     const { query } = req.query;
+    let users;
     if (!query) {
-      return res.status(400).json({
-        success: false,
-        message: 'Search query is required'
-      });
+      // If no query, return all users except current user (limit 10)
+      users = await User.find({ _id: { $ne: req.user.userId } })
+        .select('name email avatar role')
+        .limit(10);
+    } else {
+      // Search users by name or email, excluding the current user
+      users = await User.find({
+        $and: [
+          { _id: { $ne: req.user.userId } },
+          {
+            $or: [
+              { name: { $regex: query, $options: 'i' } },
+              { email: { $regex: query, $options: 'i' } }
+            ]
+          }
+        ]
+      })
+      .select('name email avatar role')
+      .limit(10);
     }
-
-    // Search users by name or email, excluding the current user
-    const users = await User.find({
-      $and: [
-        { _id: { $ne: req.user.userId } }, // Exclude current user
-        {
-          $or: [
-            { name: { $regex: query, $options: 'i' } },
-            { email: { $regex: query, $options: 'i' } }
-          ]
-        }
-      ]
-    })
-    .select('name email avatar role') // Only return necessary fields
-    .limit(10); // Limit results
-
     res.json({
       success: true,
       data: users
