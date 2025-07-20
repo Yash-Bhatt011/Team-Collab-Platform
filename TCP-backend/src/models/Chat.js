@@ -165,4 +165,4 @@ chatMessageSchema.index({ mentions: 1 });
 const Chat = mongoose.models.Chat || mongoose.model('Chat', chatSchema);
 const ChatMessage = mongoose.models.ChatMessage || mongoose.model('ChatMessage', chatMessageSchema);
 
-module.exports = mongoose.model('Chat', chatSchema);
+module.exports = { Chat, ChatMessage };
