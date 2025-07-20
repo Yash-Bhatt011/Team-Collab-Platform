@@ -10,7 +10,7 @@ import { createChat, getUserChats, getChatMessages, sendMessage } from '../servi
 import { useAuth } from '../contexts/AuthContext';
 import io from 'socket.io-client';
 
-const SOCKET_URL = 'http://localhost:5000';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_BASE_URL;
 
 const ChatWindow = ({ onDrawerClose }) => {
   const [searchQuery, setSearchQuery] = useState('');

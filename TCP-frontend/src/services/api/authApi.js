@@ -1,9 +1,9 @@
-const BASE_URL = 'http://localhost:5000/api/auth';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const authApi = {
   async login(credentials) {
     try {
-      const response = await fetch(`${BASE_URL}/login`, {
+      const response = await fetch(`${API_BASE_URL}/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -26,7 +26,7 @@ export const authApi = {
 
   async verifyToken(token) {
     try {
-      const response = await fetch(`${BASE_URL}/verify`, {
+      const response = await fetch(`${API_BASE_URL}/verify`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },

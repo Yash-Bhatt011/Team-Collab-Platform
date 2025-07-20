@@ -1,8 +1,8 @@
-const API_URL = 'http://localhost:5000/api/auth';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const authApi = {
   async login(credentials) {
-    const response = await fetch(`${API_URL}/login`, {
+    const response = await fetch(`${API_BASE_URL}/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -24,7 +24,7 @@ export const authApi = {
     const token = localStorage.getItem('token');
     if (!token) return null;
 
-    const response = await fetch(`${API_URL}/verify`, {
+    const response = await fetch(`${API_BASE_URL}/verify`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }

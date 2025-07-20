@@ -1,6 +1,6 @@
 import api from './api';
 
-const BASE_URL = 'http://localhost:5000/api/chat';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function getAuthHeaders() {
   const token = localStorage.getItem('token');
@@ -16,8 +16,12 @@ function getAuthHeaders() {
 // Get all chats for the current user
 export const getUserChats = async () => {
   try {
-    const response = await api.get('/chat');
-    return response;
+    const response = await fetch(`${API_BASE_URL}/chat`, {
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    if (!response.ok) throw new Error('Failed to fetch chats');
+    return await response.json();
   } catch (error) {
     console.error('Error fetching chats:', error);
     return {
@@ -29,19 +33,25 @@ export const getUserChats = async () => {
 
 // Get messages for a specific chat
 export const getChatMessages = async (chatId) => {
-  const token = localStorage.getItem('token');
-  const response = await fetch(`http://localhost:5000/api/chat/${chatId}/messages`, {
-    headers: { 'Authorization': `Bearer ${token}` }
+  const response = await fetch(`${API_BASE_URL}/chat/${chatId}/messages`, {
+    headers: getAuthHeaders(),
+    credentials: 'include',
   });
   if (!response.ok) throw new Error('Failed to fetch messages');
   return response.json();
 };
 
-// Create a new chat
+// Create a new chat (group or direct)
 export const createChat = async (chatData) => {
   try {
-    const response = await api.post('/chat', chatData);
-    return response;
+    const response = await fetch(`${API_BASE_URL}/chat`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+      body: JSON.stringify(chatData),
+    });
+    if (!response.ok) throw new Error('Failed to create chat');
+    return await response.json();
   } catch (error) {
     console.error('Error creating chat:', error);
     return {
@@ -53,13 +63,10 @@ export const createChat = async (chatData) => {
 
 // Send a message in a chat
 export const sendMessage = async (chatId, content) => {
-  const token = localStorage.getItem('token');
-  const response = await fetch(`http://localhost:5000/api/chat/${chatId}/messages`, {
+  const response = await fetch(`${API_BASE_URL}/chat/${chatId}/messages`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    },
+    headers: getAuthHeaders(),
+    credentials: 'include',
     body: JSON.stringify({ content })
   });
   if (!response.ok) throw new Error('Failed to send message');
@@ -106,4 +113,14 @@ export const addReaction = async (messageId, emoji) => {
       message: error.message || 'Failed to add reaction'
     };
   }
+};
+
+// Search users for chat
+export const searchChatUsers = async (query) => {
+  const response = await fetch(`${API_BASE_URL}/users/search?query=${encodeURIComponent(query)}`, {
+    headers: getAuthHeaders(),
+    credentials: 'include',
+  });
+  if (!response.ok) throw new Error('Failed to search users');
+  return response.json();
 }; 

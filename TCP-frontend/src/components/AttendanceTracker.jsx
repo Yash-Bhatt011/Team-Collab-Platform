@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -31,6 +31,7 @@ import {
 } from '@chakra-ui/react';
 import { useAttendance } from '../contexts/AttendanceContext';
 import Popup from './ui/Popup';
+import { checkIn as apiCheckIn, checkOut as apiCheckOut, startBreak as apiStartBreak, endBreak as apiEndBreak, getTodayAttendance } from '../services/api/attendanceApi';
 
 const AttendanceTracker = () => {
   const {
@@ -55,6 +56,31 @@ const AttendanceTracker = () => {
     reason: '',
   });
 
+  const [loading, setLoading] = useState(false);
+  const [attendance, setAttendance] = useState(null);
+  const [refreshFlag, setRefreshFlag] = useState(false);
+
+  // Fetch today's attendance status on mount and after actions
+  useEffect(() => {
+    const fetchAttendance = async () => {
+      setLoading(true);
+      try {
+        const res = await getTodayAttendance();
+        setAttendance(res.data);
+      } catch (error) {
+        setAttendance(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAttendance();
+  }, [refreshFlag]);
+
+  // Helper state
+  const checkedIn = attendance && attendance.checkIn && attendance.checkIn.time && !attendance.checkOut?.time;
+  const checkedOut = attendance && attendance.checkOut && attendance.checkOut.time;
+  const onBreak = attendance && attendance.breaks && attendance.breaks.some(b => b.startTime && !b.endTime);
+
   // Calculate values directly without useMemo
   const todayHours = checkInTime && attendanceStatus === 'in'
     ? (new Date() - new Date(checkInTime)) / (1000 * 60 * 60)
@@ -66,79 +92,41 @@ const AttendanceTracker = () => {
 
   const handleCheckIn = async () => {
     try {
-      const result = await checkIn('office');
-      if (!result) {
-        throw new Error('Check-in failed');
-      }
+      await apiCheckIn('office');
+      toast({ title: 'Checked in successfully', status: 'success' });
+      setRefreshFlag(f => !f);
     } catch (error) {
-      toast({
-        title: 'Check-in failed',
-        description: error.message,
-        status: 'error',
-      });
+      toast({ title: 'Check-in failed', description: error.message, status: 'error' });
     }
   };
 
-const handleCheckOut = async () => {
-  try {
-    const token = localStorage.getItem('token');
-    const response = await fetch('http://localhost:5000/api/attendance/check-out', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({ location: 'office' }),
-    });
-    const result = await response.json();
-    if (!result.success) {
-      throw new Error(result.message || 'Check-out failed');
+  const handleCheckOut = async () => {
+    try {
+      await apiCheckOut('office');
+      toast({ title: 'Checked out successfully', status: 'success' });
+      setRefreshFlag(f => !f);
+    } catch (error) {
+      toast({ title: 'Check-out failed', description: error.message, status: 'error' });
     }
-  } catch (error) {
-    toast({
-      title: 'Check-out failed',
-      description: error.message,
-      status: 'error',
-    });
-  }
-};
+  };
 
-const handleBreakStart = async () => {
-  try {
-    const token = localStorage.getItem('token');
-    const response = await fetch('http://localhost:5000/api/attendance/break/start', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({ type: 'personal' }),
-    });
-    const result = await response.json();
-    if (!result.success) {
-      throw new Error(result.message || 'Failed to start break');
+  const handleBreakStart = async () => {
+    try {
+      await apiStartBreak('personal');
+      toast({ title: 'Break started', status: 'success' });
+      setRefreshFlag(f => !f);
+    } catch (error) {
+      toast({ title: 'Failed to start break', description: error.message, status: 'error' });
     }
-  } catch (error) {
-    toast({
-      title: 'Failed to start break',
-      description: error.message,
-      status: 'error',
-    });
-  }
-};
+  };
 
   const handleBreakEnd = async () => {
     try {
-      const result = await endBreak();
-      if (!result) {
-        throw new Error('Failed to end break');
-      }
+      await apiEndBreak();
+      toast({ title: 'Break ended', status: 'success' });
+      setRefreshFlag(f => !f);
     } catch (error) {
-      toast({
-        title: 'Failed to end break',
-        description: error.message,
-        status: 'error',
-      });
+      toast({ title: 'Failed to end break', description: error.message, status: 'error' });
     }
   };
 
@@ -195,40 +183,36 @@ const handleBreakStart = async () => {
           <TabPanel p={0}>
             <VStack spacing={6}>
               <HStack justify="space-between" w="100%">
-                <Text fontSize="xl" fontWeight="bold">
-                  Attendance Tracker
-                </Text>
-                <Badge colorScheme={attendanceStatus === 'in' ? 'green' : 'red'}>
-                  {attendanceStatus === 'in' ? 'Checked In' : 'Checked Out'}
+                <Text fontSize="xl" fontWeight="bold">Attendance Tracker</Text>
+                <Badge colorScheme={checkedIn ? 'green' : checkedOut ? 'gray' : 'red'}>
+                  {checkedIn ? 'Checked In' : checkedOut ? 'Checked Out' : 'Not Checked In'}
                 </Badge>
               </HStack>
-
               <Stat>
                 <StatLabel>Today's Working Hours</StatLabel>
-                <StatNumber>{safeTodayHours.toFixed(2)} hrs</StatNumber>
+                <StatNumber>{attendance && attendance.checkIn && attendance.checkIn.time && !checkedOut ? ((new Date() - new Date(attendance.checkIn.time)) / (1000 * 60 * 60)).toFixed(2) : 0} hrs</StatNumber>
                 <StatHelpText>
-                  {checkInTime ? `Checked in at ${new Date(checkInTime).toLocaleTimeString()}` : 'Not checked in'}
+                  {attendance && attendance.checkIn && attendance.checkIn.time ? `Checked in at ${new Date(attendance.checkIn.time).toLocaleTimeString()}` : 'Not checked in'}
                 </StatHelpText>
               </Stat>
-
               <Button
-                colorScheme={attendanceStatus === 'in' ? 'red' : 'green'}
-                onClick={attendanceStatus === 'in' ? handleCheckOut : handleCheckIn}
+                colorScheme={checkedIn ? 'red' : 'green'}
+                onClick={checkedIn ? handleCheckOut : handleCheckIn}
                 size="lg"
                 w="100%"
-                disabled={attendanceStatus !== 'in'}
+                disabled={loading || (checkedIn && onBreak) || checkedOut}
               >
-                {attendanceStatus === 'in' ? 'Check Out' : 'Check In'}
+                {checkedIn ? 'Check Out' : 'Check In'}
               </Button>
-
-              {attendanceStatus === 'in' && (
+              {checkedIn && !checkedOut && (
                 <Button
-                  colorScheme={currentlyOnBreak ? 'orange' : 'yellow'}
-                  onClick={currentlyOnBreak ? handleBreakEnd : handleBreakStart}
+                  colorScheme={onBreak ? 'orange' : 'yellow'}
+                  onClick={onBreak ? handleBreakEnd : handleBreakStart}
                   size="lg"
                   w="100%"
+                  disabled={loading}
                 >
-                  {currentlyOnBreak ? 'End Break' : 'Start Break'}
+                  {onBreak ? 'End Break' : 'Start Break'}
                 </Button>
               )}
             </VStack>
