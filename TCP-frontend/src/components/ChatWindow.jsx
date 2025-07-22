@@ -136,6 +136,7 @@ const ChatWindow = ({ onDrawerClose }) => {
   const handleUserSearch = async (query) => {
     try {
       const res = await searchChatUsers(query);
+      console.log('User search results:', JSON.stringify(res, null, 2));
       if (res.success) {
         setSearchResults(res.data);
       } else {
@@ -145,6 +146,7 @@ const ChatWindow = ({ onDrawerClose }) => {
     } catch (err) {
       setSearchResults([]);
       setError('Failed to search users');
+      console.error('User search error:', err);
     }
   };
 
@@ -205,7 +207,7 @@ const ChatWindow = ({ onDrawerClose }) => {
               <IconButton icon={<CloseIcon />} size="sm" onClick={() => setShowSidebar(false)} aria-label="Close" />
             )}
             <Text fontWeight="bold" fontSize="lg">Chats</Text>
-            <Button leftIcon={<AddIcon />} size="sm" ml="auto" variant="outline">New Group</Button>
+<Button leftIcon={<AddIcon />} size="sm" ml="auto" variant="outline" onClick={() => setShowSidebar(true)}>New Group</Button>
           </HStack>
           <Box px={4} py={2} borderBottomWidth="1px">
             <Input placeholder="Search chats..." size="sm" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
@@ -325,6 +327,77 @@ const ChatWindow = ({ onDrawerClose }) => {
           </Box>
         )}
       </Flex>
+
+      {/* Group Creation Sidebar */}
+      {showSidebar && (
+        <Box p={4} borderLeftWidth={{ md: '1px' }} bg={useColorModeValue('white', 'gray.800')} w={{ base: '100vw', md: '360px' }}>
+          <Text fontWeight="bold" mb={2}>Create Group</Text>
+          <Input
+            placeholder="Search users..."
+            size="sm"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            mb={2}
+          />
+          {error && <Text color="red.400">{error}</Text>}
+          {searchResults.length === 0 && !error && (
+            <Text color="gray.400">No users found.</Text>
+          )}
+          {searchResults.length > 0 && (
+            <VStack align="stretch" spacing={2} mt={2} maxH="200px" overflowY="auto">
+              {searchResults.map(user => (
+                <HStack
+                  key={user._id}
+                  p={2}
+                  borderRadius="md"
+                  _hover={{ bg: "gray.100" }}
+                  cursor="pointer"
+                  onClick={() => {
+                    if (!selectedUsers.some(u => u._id === user._id)) {
+                      setSelectedUsers([...selectedUsers, user]);
+                    }
+                  }}
+                >
+                  <Avatar size="sm" name={user.name} src={user.avatar} />
+                  <Box>
+                    <Text fontWeight="medium">{user.name}</Text>
+                    <Text fontSize="sm" color="gray.500">{user.email}</Text>
+                  </Box>
+                  {selectedUsers.some(u => u._id === user._id) && <Badge colorScheme="green">Selected</Badge>}
+                </HStack>
+              ))}
+            </VStack>
+          )}
+          {/* Show selected users as chips/badges */}
+          {selectedUsers.length > 0 && (
+            <HStack wrap="wrap" mt={3} mb={2}>
+              {selectedUsers.map(user => (
+                <Badge key={user._id} colorScheme="blue" px={2} py={1} borderRadius="md">
+                  {user.name}
+                  <CloseIcon ml={2} boxSize={2} cursor="pointer" onClick={() => setSelectedUsers(selectedUsers.filter(u => u._id !== user._id))} />
+                </Badge>
+              ))}
+            </HStack>
+          )}
+          <Input
+            placeholder="Group name"
+            size="sm"
+            value={groupName}
+            onChange={e => setGroupName(e.target.value)}
+            mt={2}
+          />
+          <Button
+            colorScheme="blue"
+            size="sm"
+            mt={3}
+            w="100%"
+            onClick={handleCreateGroup}
+            isDisabled={!groupName.trim() || selectedUsers.length === 0}
+          >
+            Create Group
+          </Button>
+        </Box>
+      )}
     </Flex>
   );
 };
