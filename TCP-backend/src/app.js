@@ -15,7 +15,7 @@ mongoose.connect(process.env.MONGODB_URI)
   });
 
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174'],
+  origin: ['http://localhost:5173', 'http://localhost:5174', 'https://team-collab-platform-final.onrender.com'],
   credentials: true
 }));
 app.use(express.json());
